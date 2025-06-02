@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I LOVE SUBARU</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        img {
+            max-width: 400px;
+            height: 300px;
+            margin: 20px 0;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 5px;
+            max-width: 400px;
+        }
+
+        #status {
+            color: #666;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Поменять картинку</h1>
+        <img id="randomImage" src="images/Subaru WRX STI 2004.jpg" alt="Subaru WRX STI"
+            onerror="handleImageError(this)">
+        <div id="error"></div>
+        <div id="status"></div>
+        <br>
+        <button onclick="getNewImage()">Сменить изображение</button>
+    </div>
+
+    <script>
+        function updateStatus(message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            console.log(message);
+        }
+
+        function handleImageError(img) {
+            const errorMessage = `Ошибка загрузки изображения: ${img.src}`;
+            console.error(errorMessage);
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = errorMessage;
+            updateStatus('Ошибка загрузки изображения');
+        }
+
+        async function getNewImage() {
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'none';
+            updateStatus('Запрашиваю новое изображение...');
+
+            try {
+                const response = await fetch('/api/random-image');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updateStatus('Получен ответ от сервера');
+                console.log('Получен URL изображения:', data.url);
+
+                const img = document.getElementById('randomImage');
+                img.onerror = () => handleImageError(img);
+                img.src = data.url;
+                updateStatus('Изображение загружено');
+            } catch (error) {
+                console.error('Ошибка при получении изображения:', error);
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Ошибка: ' + error.message;
+                updateStatus('Произошла ошибка');
+            }
+        }
+
+        // Проверяем доступность сервера при загрузке страницы
+        window.onload = async function () {
+            updateStatus('Проверка доступности сервера...');
+            try {
+                const response = await fetch('/api/random-image');
+                if (response.ok) {
+                    updateStatus('Сервер доступен');
+                } else {
+                    throw new Error(`Сервер вернул ошибку: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке сервера:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Ошибка подключения к серверу: ' + error.message;
+                updateStatus('Сервер недоступен');
+            }
+        };
+    </script>
+</body>
+
+</html>
